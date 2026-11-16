@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo,
-  clearDone, ordered, openCount, applyToList,
+  clearDone, ordered, openCount, applyToList, listOf,
 } from "../mods/kata-todo/list.js";
 
 const todo = (id, extra = {}) => ({ id, title: id, note: "", done: false, created: 1, kata: null, ...extra });
@@ -69,4 +69,12 @@ test("applyToList starts from nothing and drops emptied lists", () => {
   assert.deepEqual(applyToList(undefined, "local:/a", (l) => addTodo(l, todo("x"))), { "local:/a": [todo("x")] });
   assert.deepEqual(applyToList({ "local:/a": [todo("x")] }, "local:/a", () => []), {});
   assert.deepEqual(applyToList("garbage", "local:/a", (l) => addTodo(l, todo("x"))), { "local:/a": [todo("x")] });
+});
+
+test("listOf: the array under a key, else empty", () => {
+  const list = [{ id: "a" }];
+  assert.equal(listOf({ k: list }, "k"), list);
+  assert.deepEqual(listOf({ k: "oops" }, "k"), []);
+  assert.deepEqual(listOf(undefined, "k"), []);
+  assert.deepEqual(listOf([list], "0"), []);
 });

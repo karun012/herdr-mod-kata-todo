@@ -47,11 +47,16 @@ export function openCount(list) {
   return list.filter((todo) => !todo.done).length;
 }
 
+export function listOf(lists, key) {
+  const all = lists && typeof lists === "object" && !Array.isArray(lists) ? lists : {};
+  return Array.isArray(all[key]) ? all[key] : [];
+}
+
 // Applies fn to one list inside the shared map. Returns `lists` itself when
 // nothing changed, so callers can skip setShared (which re-renders every mod).
 export function applyToList(lists, key, fn) {
   const all = lists && typeof lists === "object" && !Array.isArray(lists) ? lists : {};
-  const current = Array.isArray(all[key]) ? all[key] : [];
+  const current = listOf(lists, key);
   const next = fn(current);
   if (next === current) return lists;
   const out = { ...all };

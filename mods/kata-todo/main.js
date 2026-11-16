@@ -4,7 +4,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, exec, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList } from "./list.js";
+import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf } from "./list.js";
 import { repoFolder, parseToplevel, repoName } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
@@ -77,7 +77,7 @@ export default class KataTodo extends View {
   }
 
   todos() {
-    return this.repo ? (shared(LISTS_KEY)?.[this.repo.key] ?? []) : [];
+    return this.repo ? listOf(shared(LISTS_KEY), this.repo.key) : [];
   }
 
   // Re-reads shared state and applies one change, so two copies never clobber.
