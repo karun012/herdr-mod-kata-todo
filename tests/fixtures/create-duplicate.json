@@ -1,0 +1,1 @@
+{"error":{"kind":"conflict","code":"duplicate_candidates","hint":"comment on an existing issue, or pass --force-new to create anyway","message":"1 existing issue matches this title","exit_code":5,"data":{"candidates":[{"uid":"01M7J18AEEDCJH22ZXM0Z5JY3G","short_id":"jy3g","qualified_id":"kata-todo-scratch#jy3g","title":"Example todo","score":1}]}}}

@@ -1,0 +1,1 @@
+{"error":{"kind":"usage","hint":"run \"kata create --help\" for flags","message":"unknown shorthand flag: 'x' in -x starts with dash","exit_code":2}}
