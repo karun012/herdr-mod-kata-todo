@@ -42,6 +42,11 @@ export function removeTodo(list, id) {
   return next.length === list.length ? list : next;
 }
 
+// Once it's a kata issue, kata tracks it: the todo is handed off, so done.
+export function markSent(list, id, ref) {
+  return updateTodo(list, id, { kata: { ref }, done: true });
+}
+
 export function clearDone(list) {
   const next = list.filter((todo) => !todo.done);
   return next.length === list.length ? list : next;

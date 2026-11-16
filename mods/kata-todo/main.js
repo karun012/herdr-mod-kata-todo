@@ -4,7 +4,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, focused, exec, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
+import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
 import { repoFolder, listFolder, parseToplevel, repoName } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
@@ -162,7 +162,7 @@ export default class KataTodo extends View {
         result = { error: String(e?.message ?? e).split("\n")[0] };
       }
       this.sending.delete(slot);
-      if (result.ref) this.write(repo.key, (list) => updateTodo(list, id, { kata: { ref: result.ref } }));
+      if (result.ref) this.write(repo.key, (list) => markSent(list, id, result.ref));
       else this.errors.set(slot, result.error);
       cx.notify();
     });

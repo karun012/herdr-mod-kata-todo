@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo,
-  clearDone, ordered, openCount, applyToList, listOf, cleanTitle, changedFields,
+  clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields,
 } from "../mods/kata-todo/list.js";
 
 const todo = (id, extra = {}) => ({ id, title: id, note: "", done: false, created: 1, kata: null, ...extra });
@@ -89,4 +89,12 @@ test("changedFields: only the keys whose values differ", () => {
   assert.deepEqual(changedFields({ title: "a", note: "n" }, { title: "b", note: "n" }), { title: "b" });
   assert.deepEqual(changedFields({ title: "a", note: "n" }, { note: "m" }), { note: "m" });
   assert.deepEqual(changedFields({ title: "a", note: "n" }, { title: "a", note: "n" }), {});
+});
+
+test("markSent records the issue and marks the todo done", () => {
+  const list = [todo("a"), todo("b")];
+  const next = markSent(list, "b", "jy3g");
+  assert.deepEqual(next[1], { ...list[1], kata: { ref: "jy3g" }, done: true });
+  assert.equal(next[0], list[0]);
+  assert.equal(markSent(list, "zz", "jy3g"), list);
 });
