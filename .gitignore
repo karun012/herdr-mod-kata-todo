@@ -4,3 +4,7 @@ node_modules/
 mods/*/gpui-kit.d.ts
 mods/*/herdr.d.ts
 mods/*/jsconfig.json
+# A literal "~" folder (nvm links) that tooling outside the repo keeps creating
+/~/
+# Finder
+.DS_Store
