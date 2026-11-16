@@ -129,6 +129,8 @@ export default class KataTodo extends View {
     Object.assign(draft, patch);
   }
 
+  close(_cx) { this.save(); }
+
   send(id, cx) {
     const repo = this.repo;
     if (!repo) return;
