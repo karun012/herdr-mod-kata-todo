@@ -28,9 +28,9 @@ particular project, sandbox or machine.
 **Which list.** The focused space's repository: the git top-level of the
 space's first terminal's live folder, from `git rev-parse --show-toplevel` run
 on the space's machine. "First terminal" is the first terminal pane of the
-space's first tab (`space.tabs[0]`, matched to `panes()` by tab id), as Herdr's
-own mods name spaces; with none, `space.folder`, and an empty `space.folder`
-is the machine's home. A folder outside git uses the folder itself. The list
+space's first tab (lowest `index`, matched to `panes()` by tab id), as Herdr's
+own mods name spaces; with none, or when its folder is unknown, `space.folder`,
+and an empty `space.folder` is the machine's home. A folder outside git uses the folder itself. The list
 key is `"<machine or local>:<path>"`; the header shows the path's basename.
 
 The repo is resolved off the render path: when the focused space id, its
@@ -66,7 +66,8 @@ Theme colours only (`theme()`): chrome background, `foreground`, `muted`,
   `dim`) right.
 - **Add field.** Under the header, rounded 8, 1px `border`, background
   `background`, placeholder `Add a todo…`. Enter (the input's `submit` event)
-  adds to the top of the open items; Escape clears the field. Inputs emit no
+  adds to the top of the open items; Escape closes an open row first,
+  otherwise clears the field. Inputs emit no
   Escape event, so Escape here and in an open row is an `on_key_down` on a
   wrapping element matching `"escape"`.
 - **Row.** 13px text, 8px vertical padding: a 14px ring checkbox, the title
@@ -111,7 +112,8 @@ kata create <title> [--body <note>] --idempotency-key <key> --json
   shape of the refusal (where the refs are in the `--json` reply) is read from
   kata's own docs or a refusal in a throwaway kata project before the parser
   tests are written; no made-up fixtures.
-- Any other non-zero exit shows the first stderr line. A machine that cannot
+- Any other non-zero exit shows kata's `error.message` from its JSON on
+  stderr, else the first stderr line. A machine that cannot
   be reached or a timeout shows that.
 - A reply arriving after the person moved to another repo still updates the
   todo it was sent for (looked up by list key and id).
