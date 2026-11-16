@@ -34,14 +34,23 @@ export default class KataTodo extends View {
 
     this.add = InputState.new({ placeholder: "Add a todo…" });
     this.add.on("submit", (_e, cx) => { this.addFromInput(); cx.notify(); });
-    this.title = InputState.new();
+    // A textarea so a long title wraps while editing; Enter closes the row
+    // (the newline it types is caught on change).
+    this.title = TextareaState.new({ rows: 1 });
+    this.title.set_auto_grow(1, 6);
     this.note = TextareaState.new({ placeholder: "Note", rows: 2 });
     this.note.set_auto_grow(2, 8);
     for (const state of [this.title, this.note]) {
       state.on("change", (_e, cx) => this.scheduleSave(cx));
       state.on("blur", () => this.save());
     }
-    this.title.on("submit", (_e, cx) => { this.closeRow(); cx.notify(); });
+    this.title.on("change", (_e, cx) => {
+      const value = this.title.value();
+      if (!/[\r\n]/.test(value)) return;
+      this.title.set_value(cleanTitle(value));
+      this.closeRow();
+      cx.notify();
+    });
 
     if (checking()) return;
     cx.timer.every(500, (cx) => this.follow(cx));
@@ -183,7 +192,8 @@ export default class KataTodo extends View {
         cx.notify();
       });
 
-    let line = h_flex().id(`row-${todo.id}`).px(18).py(8).gap(10).items_center().text_size(13)
+    let line = h_flex().id(`row-${todo.id}`).px(18).py(8).gap(10).text_size(13)
+      .when(open, (el) => el.items_start()).when(!open, (el) => el.items_center())
       .when(hovered, (el) => el.bg(t.raised))
       .on_hover((on, cx) => {
         const next = on ? todo.id : this.hovered === todo.id ? null : this.hovered;
@@ -192,7 +202,7 @@ export default class KataTodo extends View {
       .child(ring);
 
     if (open) {
-      line = line.child(div().flex_1().min_w(0).child(Input.new(this.title).w_full().text_size(13).text_color(t.foreground)));
+      line = line.child(div().flex_1().min_w(0).child(Textarea.new(this.title).w_full().text_size(13).text_color(t.foreground)));
     } else {
       line = line
         .child(div().id(`title-${todo.id}`).flex_1().min_w(0).truncate().cursor_pointer()
