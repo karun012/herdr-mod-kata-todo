@@ -83,8 +83,12 @@ Theme colours only (`theme()`): chrome background, `foreground`, `muted`,
 - **Error.** One line under the row in `ansi1` at reduced opacity: kata's first
   error line, or `looks like <refs>` for kata's duplicate refusal. The todo
   stays and `→ kata` returns.
-- **Done.** Below the open items, `dim` with a strikethrough. `Clear done`
-  (11px, `dim`) at the bottom when any exist.
+- **Done.** Below the open items, `dim` with a strikethrough. When any exist,
+  a footer line (11px, `dim`) reads `N done · Hide · Clear`. **Hide** stops
+  drawing done rows and the footer becomes `N done hidden · Show · Clear`;
+  **Show** brings them back. Off by default (done rows shown). The choice is
+  one boolean for the whole mod, kept in the copy's `localStorage` (a view
+  preference, not data), so it holds across repos and restarts.
 - **Empty.** `Nothing to do.` centred in `dim`.
 
 ## Sending to kata
