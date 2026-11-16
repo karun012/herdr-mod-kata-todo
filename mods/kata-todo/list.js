@@ -7,8 +7,12 @@ export function listKey(machine, path) {
   return `${machine ?? "local"}:${path || "~"}`;
 }
 
+export function cleanTitle(text) {
+  return String(text ?? "").replace(/\s+/g, " ").trim();
+}
+
 export function newTodo(title, { id, now }) {
-  const text = String(title ?? "").trim();
+  const text = cleanTitle(title);
   if (!text) return null;
   return { id, title: text, note: "", done: false, created: now, kata: null };
 }

@@ -4,7 +4,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, exec, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf } from "./list.js";
+import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf, cleanTitle } from "./list.js";
 import { repoFolder, parseToplevel, repoName } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
@@ -121,7 +121,7 @@ export default class KataTodo extends View {
     this.saveTask = null;
     const draft = this.draft;
     if (!draft) return;
-    const title = this.title.value().trim();
+    const title = cleanTitle(this.title.value());
     const note = this.note.value().trim();
     this.write(draft.key, (list) => updateTodo(list, draft.id, title ? { title, note } : { note }));
   }
