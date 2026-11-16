@@ -3,7 +3,7 @@
 
 export function repoFolder(space, panes) {
   const first = [...(space.tabs ?? [])].sort((a, b) => a.index - b.index)[0];
-  const pane = first && panes.find((p) => p.tab === first.id && p.terminal && p.cwd);
+  const pane = first && panes.find((p) => p.tab === first.id && p.terminal);
   return pane?.cwd ?? space.folder ?? "";
 }
 

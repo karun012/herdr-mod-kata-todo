@@ -37,3 +37,11 @@ test("repoName", () => {
   assert.equal(repoName(""), "~");
   assert.equal(repoName("/"), "/");
 });
+
+test("repoFolder: only the first terminal counts, even without a cwd", () => {
+  const panes = [
+    { tab: "t1", terminal: "a", cwd: null },
+    { tab: "t1", terminal: "b", cwd: "/r/b" },
+  ];
+  assert.equal(repoFolder(space(), panes), "/home/me/start");
+});
