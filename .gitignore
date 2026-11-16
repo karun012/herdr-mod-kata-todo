@@ -1,2 +1,6 @@
 .trash/
 node_modules/
+# Written by `herdr-app check` / the app for editor typing support
+mods/*/gpui-kit.d.ts
+mods/*/herdr.d.ts
+mods/*/jsconfig.json

@@ -14,4 +14,4 @@ check:
 # Copy the mod into Herdr, which hot-reloads it
 install: test check
     mkdir -p "{{app_home}}/mods/kata-todo"
-    rsync -a "{{justfile_directory()}}/mods/kata-todo/" "{{app_home}}/mods/kata-todo/"
+    rsync -a --exclude gpui-kit.d.ts --exclude herdr.d.ts --exclude jsconfig.json "{{justfile_directory()}}/mods/kata-todo/" "{{app_home}}/mods/kata-todo/"
