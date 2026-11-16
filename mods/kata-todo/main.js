@@ -3,13 +3,14 @@
 // gathers facts from Herdr, calls them, and performs the effects.
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
-import { spaces, panes, focused, exec, shared, setShared, theme, checking } from "herdr";
+import { spaces, panes, focused, exec, readTextFile, shared, setShared, theme, checking } from "herdr";
 import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
-import { repoFolder, listFolder, parseToplevel, repoName } from "./repo.js";
+import { repoFolder, listFolder, parseToplevel, repoName, kataConfigPaths } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
 const HIDE_DONE = "kata-todo.hide-done";
 const SAVE_AFTER_MS = 500;
+const BOUND_RECHECK_MS = 30000;
 const makeId = () => Math.random().toString(36).slice(2, 8);
 
 function readHideDone() {
@@ -24,6 +25,9 @@ export default class KataTodo extends View {
     this.repo = null;          // { key, path, name, machine }
     this.context = null;       // the machine + folder the repo was resolved from
     this.kata = {};            // machine ("local" for this one) -> kata on its PATH
+    this.bound = {};           // list key -> a .kata.toml at or above the repo
+    this.boundCheckedAt = 0;
+    this.checkingBound = false;
     this.sending = new Set();  // "key|id"
     this.errors = new Map();   // "key|id" -> one line
     this.hovered = null;
@@ -68,7 +72,11 @@ export default class KataTodo extends View {
       folder = repoFolder(space, panes());
     }
     const context = `${machine ?? ""}\n${folder}`;
-    if (context === this.context) return;
+    if (context === this.context) {
+      // Re-check now and then so `kata init` shows → kata without a folder change.
+      if (Date.now() - this.boundCheckedAt > BOUND_RECHECK_MS) this.checkBound(cx);
+      return;
+    }
     this.context = context;
     cx.spawn(async (cx) => {
       let top = null;
@@ -81,11 +89,27 @@ export default class KataTodo extends View {
       if (key !== this.repo?.key) this.closeRow();
       this.repo = { key, path, name: repoName(path), machine };
       cx.notify();
+      this.checkBound(cx);
       const m = machine ?? "local";
       if (m in this.kata) return;
       this.kata[m] = false;
       try { this.kata[m] = (await exec("sh", ["-c", "command -v kata"], { on: machine })).code === 0; } catch {}
       cx.notify();
+    });
+  }
+
+  checkBound(cx) {
+    const repo = this.repo;
+    if (!repo || this.checkingBound) return;
+    this.checkingBound = true;
+    this.boundCheckedAt = Date.now();
+    cx.spawn(async (cx) => {
+      let bound = false;
+      for (const path of kataConfigPaths(repo.path)) {
+        try { if ((await readTextFile(path, { on: repo.machine })) !== null) { bound = true; break; } } catch {}
+      }
+      this.checkingBound = false;
+      if (this.bound[repo.key] !== bound) { this.bound[repo.key] = bound; cx.notify(); }
     });
   }
 
@@ -181,7 +205,7 @@ export default class KataTodo extends View {
     const hovered = this.hovered === todo.id && !open;
     const sending = this.sending.has(slot);
     const error = this.errors.get(slot);
-    const canSend = this.kata[repo.machine ?? "local"] === true && !todo.kata && !todo.done;
+    const canSend = this.kata[repo.machine ?? "local"] === true && this.bound[repo.key] === true && !todo.kata && !todo.done;
 
     const ring = div().id(`ring-${todo.id}`).size(14).flex_none().rounded_full().border_1()
       .border_color(t.dim).cursor_pointer().flex().items_center().justify_center()

@@ -19,6 +19,18 @@ export function parseToplevel({ code, stdout }) {
   return code === 0 && path ? path : null;
 }
 
+// Where kata looks for the project binding: .kata.toml in the folder or above.
+export function kataConfigPaths(path) {
+  if (!path) return [];
+  const paths = [];
+  let dir = path.replace(/\/+$/, "");
+  for (;;) {
+    paths.push(`${dir}/.kata.toml`);
+    if (!dir) return paths;
+    dir = dir.slice(0, dir.lastIndexOf("/"));
+  }
+}
+
 export function repoName(path) {
   if (!path) return "~";
   const parts = path.replace(/[\\/]+$/, "").split(/[\\/]/);

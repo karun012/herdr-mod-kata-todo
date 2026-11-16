@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { repoFolder, listFolder, parseToplevel, repoName } from "../mods/kata-todo/repo.js";
+import { repoFolder, listFolder, parseToplevel, repoName, kataConfigPaths } from "../mods/kata-todo/repo.js";
 
 const space = (extra = {}) => ({
   folder: "/home/me/start",
@@ -59,4 +59,11 @@ test("listFolder: keep the current list while a non-terminal pane has focus", ()
 test("listFolder: nothing focused falls back to the space's first terminal", () => {
   const panes = [{ tab: "t1", terminal: "a", cwd: "/r/app" }];
   assert.equal(listFolder(null, space(), panes), "/r/app");
+});
+
+test("kataConfigPaths: the folder, then every folder above it, as kata looks", () => {
+  assert.deepEqual(kataConfigPaths("/r/app"), ["/r/app/.kata.toml", "/r/.kata.toml", "/.kata.toml"]);
+  assert.deepEqual(kataConfigPaths("/r/app/"), ["/r/app/.kata.toml", "/r/.kata.toml", "/.kata.toml"]);
+  assert.deepEqual(kataConfigPaths("/"), ["/.kata.toml"]);
+  assert.deepEqual(kataConfigPaths(""), []);
 });
