@@ -125,7 +125,8 @@ kata create <title> [--body <note>] --idempotency-key <key> --json
 | File | Role |
 |---|---|
 | `mod.json` | `{ "place": "none", "title": "Todo" }` |
-| `list.js` | Pure functions on plain data: `listKey`, `addTodo`, `toggle`, `edit`, `remove`, `clearDone`, `ordered`, `openCount`. No Herdr imports. |
+| `list.js` | Pure functions on plain data: `listKey`, `newTodo`, `addTodo`, `updateTodo`, `removeTodo`, `clearDone`, `ordered`, `openCount`, `applyToList`. No Herdr imports. |
+| `repo.js` | Pure: `repoFolder(space, panes)`, `parseToplevel`, `repoName`. No Herdr imports. |
 | `kata.js` | Pure functions: `createArgs(todo)`, `idempotencyKey(todo)`, `parseCreate({code, stdout, stderr})` → `{ref}` or `{error}`. No Herdr imports. |
 | `main.js` | The `View`: resolves the repo, reads/writes shared state, runs `git` and `kata` through `exec`, draws the list. |
 
