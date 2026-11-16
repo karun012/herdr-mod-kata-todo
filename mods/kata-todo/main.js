@@ -3,9 +3,9 @@
 // gathers facts from Herdr, calls them, and performs the effects.
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
-import { spaces, panes, exec, shared, setShared, theme, checking } from "herdr";
+import { spaces, panes, focused, exec, shared, setShared, theme, checking } from "herdr";
 import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
-import { repoFolder, parseToplevel, repoName } from "./repo.js";
+import { repoFolder, listFolder, parseToplevel, repoName } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
 const HIDE_DONE = "kata-todo.hide-done";
@@ -48,12 +48,16 @@ export default class KataTodo extends View {
     this.follow(cx);
   }
 
-  // Re-resolve the repo when the shown space, its machine or its folder changes.
+  // Re-resolve the repo when the focused terminal's machine or folder changes.
   follow(cx) {
     const space = spaces().find((s) => s.active);
     if (!space) return;
     const machine = space.machine ?? null;
-    const folder = repoFolder(space, panes());
+    let folder = listFolder(focused(), space, panes());
+    if (folder === null) {
+      if (this.context) return;
+      folder = repoFolder(space, panes());
+    }
     const context = `${machine ?? ""}\n${folder}`;
     if (context === this.context) return;
     this.context = context;

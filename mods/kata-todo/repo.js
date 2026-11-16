@@ -1,10 +1,17 @@
-// Which folder a space's list belongs to, as Herdr's own mods name spaces:
-// the first terminal of its first tab, else the space's folder ("" = home).
+// Which folder a list belongs to. With no terminal focused, as Herdr's own mods
+// name spaces: the first terminal of its first tab, else its folder ("" = home).
 
 export function repoFolder(space, panes) {
   const first = [...(space.tabs ?? [])].sort((a, b) => a.index - b.index)[0];
   const pane = first && panes.find((p) => p.tab === first.id && p.terminal);
   return pane?.cwd ?? space.folder ?? "";
+}
+
+// The list follows the focused terminal. null means "keep the current list":
+// a non-terminal pane (a diff, a viewer) or a terminal whose folder is unknown.
+export function listFolder(focus, space, panes) {
+  if (!focus) return repoFolder(space, panes);
+  return focus.terminal && focus.cwd ? focus.cwd : null;
 }
 
 export function parseToplevel({ code, stdout }) {

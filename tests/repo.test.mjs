@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { repoFolder, parseToplevel, repoName } from "../mods/kata-todo/repo.js";
+import { repoFolder, listFolder, parseToplevel, repoName } from "../mods/kata-todo/repo.js";
 
 const space = (extra = {}) => ({
   folder: "/home/me/start",
@@ -44,4 +44,19 @@ test("repoFolder: only the first terminal counts, even without a cwd", () => {
     { tab: "t1", terminal: "b", cwd: "/r/b" },
   ];
   assert.equal(repoFolder(space(), panes), "/home/me/start");
+});
+
+test("listFolder: the focused terminal's folder", () => {
+  const focus = { space: "s", tab: "t9", pane: "p9", terminal: "t9x", cwd: "/home/me" };
+  assert.equal(listFolder(focus, space(), []), "/home/me");
+});
+
+test("listFolder: keep the current list while a non-terminal pane has focus", () => {
+  assert.equal(listFolder({ pane: "p1", terminal: null, cwd: null }, space(), []), null);
+  assert.equal(listFolder({ pane: "p1", terminal: "t1", cwd: null }, space(), []), null);
+});
+
+test("listFolder: nothing focused falls back to the space's first terminal", () => {
+  const panes = [{ tab: "t1", terminal: "a", cwd: "/r/app" }];
+  assert.equal(listFolder(null, space(), panes), "/r/app");
 });
