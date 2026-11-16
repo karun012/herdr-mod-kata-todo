@@ -1,5 +1,10 @@
 # Todo (kata-todo)
 
+> [!WARNING]
+> **Work in progress.** This mod is early and not ready for everyday use.
+> Features, behaviour and the way todos are stored may change between versions
+> without notice. Try it out, but don't rely on it yet.
+
 A mod for the Herdr desktop app: a small todo list for the repository of the
 terminal you are in, shown in Herdr as **Todo**. Each repository on each
 machine has its own list. Add items, tick them off, add a note (a long title wraps while you edit it), and, where
