@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo,
-  clearDone, ordered, openCount, applyToList, listOf, cleanTitle,
+  clearDone, ordered, openCount, applyToList, listOf, cleanTitle, changedFields,
 } from "../mods/kata-todo/list.js";
 
 const todo = (id, extra = {}) => ({ id, title: id, note: "", done: false, created: 1, kata: null, ...extra });
@@ -83,4 +83,10 @@ test("cleanTitle: one line, single spaces", () => {
   assert.equal(cleanTitle("  a\n b\t\tc   d "), "a b c d");
   assert.equal(cleanTitle(undefined), "");
   assert.equal(newTodo("a\n b", { id: "a1", now: 7 }).title, "a b");
+});
+
+test("changedFields: only the keys whose values differ", () => {
+  assert.deepEqual(changedFields({ title: "a", note: "n" }, { title: "b", note: "n" }), { title: "b" });
+  assert.deepEqual(changedFields({ title: "a", note: "n" }, { note: "m" }), { note: "m" });
+  assert.deepEqual(changedFields({ title: "a", note: "n" }, { title: "a", note: "n" }), {});
 });

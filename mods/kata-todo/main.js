@@ -4,7 +4,7 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, exec, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf, cleanTitle } from "./list.js";
+import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
 import { repoFolder, parseToplevel, repoName } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
@@ -98,9 +98,9 @@ export default class KataTodo extends View {
   openRow(todo, cx) {
     this.save();
     this.openId = todo.id;
-    this.draft = { key: this.repo.key, id: todo.id };
     this.title.set_value(todo.title);
     this.note.set_value(todo.note ?? "");
+    this.draft = { key: this.repo.key, id: todo.id, title: todo.title, note: todo.note ?? "" };
     // The title Input mounts on the next render; focus it after that.
     cx.timer.after(0, () => this.title.focus());
   }
@@ -123,7 +123,10 @@ export default class KataTodo extends View {
     if (!draft) return;
     const title = cleanTitle(this.title.value());
     const note = this.note.value().trim();
-    this.write(draft.key, (list) => updateTodo(list, draft.id, title ? { title, note } : { note }));
+    const patch = changedFields({ title: draft.title, note: draft.note }, title ? { title, note } : { note });
+    if (!Object.keys(patch).length) return;
+    this.write(draft.key, (list) => updateTodo(list, draft.id, patch));
+    Object.assign(draft, patch);
   }
 
   send(id, cx) {

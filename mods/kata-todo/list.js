@@ -17,6 +17,10 @@ export function newTodo(title, { id, now }) {
   return { id, title: text, note: "", done: false, created: now, kata: null };
 }
 
+export function changedFields(before, after) {
+  return Object.fromEntries(Object.entries(after).filter(([key, value]) => value !== before[key]));
+}
+
 export function addTodo(list, todo) {
   return [todo, ...list];
 }
