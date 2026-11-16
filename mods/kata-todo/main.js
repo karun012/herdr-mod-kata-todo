@@ -253,6 +253,7 @@ export default class KataTodo extends View {
 
   render() {
     const t = theme();
+    const repo = this.repo;
     const todos = this.todos();
     const open = openCount(todos);
     const done = todos.length - open;
@@ -283,6 +284,7 @@ export default class KataTodo extends View {
           writeHideDone(this.hideDone);
         }))
         .child("·")
-        .child(this.action("clear-done", "Clear", t.dim, () => this.write(this.repo.key, clearDone)))));
+        // The list drawn, not whichever one this.repo points at by the time of the click.
+        .child(this.action("clear-done", "Clear", t.dim, () => this.write(repo.key, clearDone)))));
   }
 }
