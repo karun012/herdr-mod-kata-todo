@@ -20,8 +20,9 @@ panel next to Files and Changes). `RECIPE.md` has the details.
 Requirements:
 
 - `git` on the space's machine, to find the repository.
-- `kata` on the PATH of the space's machine, for `→ kata`. Without it the mod
-  is a plain todo list. kata picks the project from the repository's
+- `kata` on the PATH of the space's machine, and a `.kata.toml` in the
+  repository or a folder above it (`kata init`), for `→ kata`. Without them the
+  mod is a plain todo list. kata picks the project from the repository's
   `.kata.toml`, so each repository's todos go to that repository's kata
   project.
 

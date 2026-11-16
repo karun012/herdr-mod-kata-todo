@@ -61,7 +61,10 @@ optional text. `done`: boolean. `created`: seconds. `kata`: `null` until
 sent, then `{ "ref": "<short id>" }`.
 
 **Kata availability.** Once per machine per session, `sh -c 'command -v kata'`
-on that machine. `→ kata` is shown only where it succeeds.
+on that machine, and a `.kata.toml` in the repository or a folder above it
+(`kataConfigPaths`, read with `readTextFile` on the space's machine), checked
+when the list changes repository and every 30 s after. `→ kata` is shown only
+where both hold.
 
 ## What you see
 
@@ -167,6 +170,7 @@ and `kata.js`; `main.js` only gathers facts, calls them, and performs effects.
 
 `herdr-mod-kata-todo`, shaped like the mods on herdr.dev: `mods/kata-todo/`,
 `README.md`, `RECIPE.md`, `preview.png`, `tests/`, `docs/`. The README says
-`→ kata` needs `kata` on the PATH of the space's machine. A person's layout
+`→ kata` needs `kata` on the PATH of the space's machine and a `.kata.toml` at
+or above the repository. A person's layout
 (a Todo tab, a tab-bar button) and any kata wrapper are their own setup and are
 not in the repository.

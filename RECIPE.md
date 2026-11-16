@@ -62,8 +62,8 @@ It shows no agent status; it follows the focused terminal.
 - **Escape** closes the open row if there is one, otherwise clears the add
   field.
 - **Hover** a closed row: background `raised`; at the right, `→ kata` (11px
-  `accent`) when kata is on the machine's PATH and the item is not sent and
-  not done, and `×` (11px `dim`). Neither shows while sending.
+  `accent`) when kata is on the machine's PATH, a `.kata.toml` is in the
+  repository or a folder above it, and the item is not sent and not done, and `×` (11px `dim`). Neither shows while sending.
 - **Ring** click toggles done.
 - **×** deletes the item at once, no confirmation.
 - **Title** click opens the row in place and focuses the title, which wraps
@@ -88,7 +88,10 @@ It shows no agent status; it follows the focused terminal.
 - **Hide / Show** stops or resumes drawing done items. One flag for the whole
   mod copy, kept across repositories and restarts. **Clear** removes all done
   items from this list.
-- With no `kata` on the machine's PATH it is a plain todo list: no `→ kata`.
+- With no `kata` on the machine's PATH, or no `.kata.toml` at or above the
+  repository, it is a plain todo list: no `→ kata`. The `.kata.toml` check runs
+  when the list changes repository and every 30 s after, so `kata init` shows
+  `→ kata` without switching folders.
 
 ## Built from
 
@@ -113,6 +116,8 @@ It shows no agent status; it follows the focused terminal.
 - `git rev-parse --show-toplevel` in the focused terminal's folder, when that
   machine or folder changes (checked every 500 ms).
 - `sh -c 'command -v kata'`, once per machine per mod copy.
+- `readTextFile` of `<dir>/.kata.toml` for the repository and each folder
+  above it (on the space's machine), until one exists.
 - `kata create --idempotency-key todo-<id>-<hash> [--body <note>] --json -- <title>`,
   in the repository folder, only when the person presses `→ kata`.
   `<id>` is the item's 6-character random id; `<hash>` is a 32-bit FNV-1a
@@ -201,7 +206,8 @@ to `keys.json`, for example under `global`:
 - A long title wraps when the row is opened, and Enter closes the row.
 - Ticking the ring moves the item below the open ones, struck through, and
   the footer reads `1 done · Hide · Clear`; Hide hides it, Clear removes it.
-- Where `kata` is on the PATH, hovering shows `→ kata`; pressing it shows
+- In a repository with a `.kata.toml` where `kata` is on the PATH, hovering
+  shows `→ kata`; in one without, it doesn't; pressing it shows
   `sending…`, then the short id chip, and the issue exists in that
   repository's kata project. The sent item is ticked and sits below the open
   ones. Sending the same title again from a new item
