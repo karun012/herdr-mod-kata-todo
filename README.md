@@ -38,6 +38,8 @@ Requirements:
   (Herdr's `shared.json`), kept across restarts. Nothing is written in your
   repositories. The Hide/Show choice for done items is one `localStorage`
   flag.
+- **Undo.** `×` and Clear act at once; for 30 s the footer offers Undo, which
+  puts the items back where they were.
 - **Sending.** `→ kata` runs, in the repository folder on the space's
   machine:
 

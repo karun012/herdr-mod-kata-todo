@@ -4,13 +4,14 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, focused, exec, readTextFile, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
+import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields, removal, restoreTodos } from "./list.js";
 import { repoFolder, listFolder, parseToplevel, repoName, kataConfigPaths } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
 const HIDE_DONE = "kata-todo.hide-done";
 const SAVE_AFTER_MS = 500;
 const BOUND_RECHECK_MS = 30000;
+const UNDO_FOR_MS = 30000;
 const makeId = () => Math.random().toString(36).slice(2, 8);
 
 function readHideDone() {
@@ -34,6 +35,8 @@ export default class KataTodo extends View {
     this.openId = null;
     this.draft = null;         // { key, id } of the open row
     this.saveTask = null;
+    this.undo = null;          // { key, what, removed } of the last × or Clear
+    this.undoTask = null;
     this.hideDone = readHideDone();
 
     this.add = InputState.new({ placeholder: "Add a todo…" });
@@ -122,6 +125,29 @@ export default class KataTodo extends View {
     const lists = shared(LISTS_KEY);
     const next = applyToList(lists, key, fn);
     if (next !== lists) setShared(LISTS_KEY, next);
+  }
+
+  // × and Clear: remove at once, and keep what went so Undo can put it back.
+  remove(key, fn, what, cx) {
+    let removed = null;
+    this.write(key, (list) => {
+      const next = fn(list);
+      removed = removal(list, next);
+      return next;
+    });
+    if (!removed) return;
+    this.undoTask?.cancel();
+    this.undo = { key, what, removed };
+    this.undoTask = cx.timer.after(UNDO_FOR_MS, (cx) => { this.undo = null; this.undoTask = null; cx.notify(); });
+  }
+
+  undoRemove(undo) {
+    if (this.undo === undo) {
+      this.undoTask?.cancel();
+      this.undo = null;
+      this.undoTask = null;
+    }
+    this.write(undo.key, (list) => restoreTodos(list, undo.removed));
   }
 
   addFromInput() {
@@ -240,7 +266,7 @@ export default class KataTodo extends View {
         .when(sending, (el) => el.child(div().flex_none().text_size(11).text_color(t.dim).child("sending…")))
         .when(hovered && !sending && canSend, (el) => el.child(this.action(`send-${todo.id}`, "→ kata", t.accent, (cx) => this.send(todo.id, cx))))
         .when(hovered && !sending, (el) => el.child(this.action(`del-${todo.id}`, "×", t.dim,
-          () => this.write(repo.key, (list) => removeTodo(list, todo.id)))));
+          (cx) => this.remove(repo.key, (list) => removeTodo(list, todo.id), "deleted", cx))));
     }
 
     return v_flex().id(`item-${todo.id}`)
@@ -258,6 +284,7 @@ export default class KataTodo extends View {
     const open = openCount(todos);
     const done = todos.length - open;
     const shown = ordered(todos).filter((todo) => !(this.hideDone && todo.done));
+    const undo = repo && this.undo?.key === repo.key ? this.undo : null;
 
     return v_flex().id("kata-todo").size_full().bg(t.chrome).text_color(t.foreground)
       .on_key_down((e, cx) => {
@@ -276,15 +303,20 @@ export default class KataTodo extends View {
       .child(shown.length
         ? v_flex().id("todos").flex_1().min_h(0).overflow_y_scrollbar().children(shown.map((todo) => this.row(todo, t)))
         : div().flex_1().flex().items_center().justify_center().text_size(12).text_color(t.dim).child("Nothing to do."))
-      .when(done > 0, (el) => el.child(h_flex().px(18).py(10).gap(6).text_size(11).text_color(t.dim)
-        .child(`${done} done${this.hideDone ? " hidden" : ""}`)
-        .child("·")
-        .child(this.action("toggle-done", this.hideDone ? "Show" : "Hide", t.dim, () => {
-          this.hideDone = !this.hideDone;
-          writeHideDone(this.hideDone);
-        }))
-        .child("·")
-        // The list drawn, not whichever one this.repo points at by the time of the click.
-        .child(this.action("clear-done", "Clear", t.dim, () => this.write(repo.key, clearDone)))));
+      .when(done > 0 || Boolean(undo), (el) => el.child(h_flex().px(18).py(10).justify_between().text_size(11).text_color(t.dim)
+        .child(h_flex().gap(6).when(done > 0, (row) => row
+          .child(`${done} done${this.hideDone ? " hidden" : ""}`)
+          .child("·")
+          .child(this.action("toggle-done", this.hideDone ? "Show" : "Hide", t.dim, () => {
+            this.hideDone = !this.hideDone;
+            writeHideDone(this.hideDone);
+          }))
+          .child("·")
+          // The list drawn, not whichever one this.repo points at by the time of the click.
+          .child(this.action("clear-done", "Clear", t.dim, (cx) => this.remove(repo.key, clearDone, "cleared", cx)))))
+        .when(Boolean(undo), (row) => row.child(h_flex().gap(6)
+          .child(`${undo.removed.todos.length} ${undo.what}`)
+          .child("·")
+          .child(this.action("undo", "Undo", t.accent, () => this.undoRemove(undo)))))));
   }
 }

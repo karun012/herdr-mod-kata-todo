@@ -52,6 +52,36 @@ export function clearDone(list) {
   return next.length === list.length ? list : next;
 }
 
+// What a removal (× or Clear) took, with the order before it, so Undo can put
+// it back. null when nothing went.
+export function removal(before, after) {
+  const kept = new Set(after.map((todo) => todo.id));
+  const todos = before.filter((todo) => !kept.has(todo.id));
+  return todos.length ? { todos, order: before.map((todo) => todo.id) } : null;
+}
+
+// Where a removed todo goes back: after the nearest todo that stood above it
+// and is still there, else before the nearest that stood below it, else last.
+function slot(list, order, id) {
+  const at = (other) => list.findIndex((todo) => todo.id === other);
+  const i = order.indexOf(id);
+  for (let j = i - 1; j >= 0; j--) if (at(order[j]) >= 0) return at(order[j]) + 1;
+  for (let j = i + 1; j < order.length; j++) if (at(order[j]) >= 0) return at(order[j]);
+  return list.length;
+}
+
+// Undo: puts a removal's todos back in place, skipping any already back.
+export function restoreTodos(list, { todos, order }) {
+  const present = new Set(list.map((todo) => todo.id));
+  let next = list;
+  for (const todo of todos) {
+    if (present.has(todo.id)) continue;
+    const at = slot(next, order, todo.id);
+    next = [...next.slice(0, at), todo, ...next.slice(at)];
+  }
+  return next;
+}
+
 export function ordered(list) {
   return [...list.filter((todo) => !todo.done), ...list.filter((todo) => todo.done)];
 }

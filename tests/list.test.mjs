@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo,
   clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields,
+  removal, restoreTodos,
 } from "../mods/kata-todo/list.js";
 
 const todo = (id, extra = {}) => ({ id, title: id, note: "", done: false, created: 1, kata: null, ...extra });
@@ -97,4 +98,47 @@ test("markSent records the issue and marks the todo done", () => {
   assert.deepEqual(next[1], { ...list[1], kata: { ref: "jy3g" }, done: true });
   assert.equal(next[0], list[0]);
   assert.equal(markSent(list, "zz", "jy3g"), list);
+});
+
+const ids = (list) => list.map((t) => t.id);
+
+test("removal: what went and the order before, else null", () => {
+  const list = [todo("a"), todo("b"), todo("c")];
+  assert.deepEqual(removal(list, removeTodo(list, "b")), { todos: [list[1]], order: ["a", "b", "c"] });
+  assert.equal(removal(list, list), null);
+});
+
+test("restoreTodos: × then Undo puts the todo back in place", () => {
+  const list = [todo("a"), todo("b"), todo("c")];
+  const after = removeTodo(list, "b");
+  assert.deepEqual(restoreTodos(after, removal(list, after)), list);
+});
+
+test("restoreTodos: Clear then Undo puts every done todo back between the open ones", () => {
+  const list = [todo("a"), todo("b", { done: true }), todo("c"), todo("d", { done: true })];
+  const after = clearDone(list);
+  assert.deepEqual(restoreTodos(after, removal(list, after)), list);
+  const all = [todo("x", { done: true }), todo("y", { done: true })];
+  assert.deepEqual(ids(restoreTodos(clearDone(all), removal(all, clearDone(all)))), ["x", "y"]);
+});
+
+test("restoreTodos: todos added since stay where they are", () => {
+  const list = [todo("a"), todo("b"), todo("c")];
+  const mid = removal(list, removeTodo(list, "b"));
+  assert.deepEqual(ids(restoreTodos([todo("n"), todo("a"), todo("c")], mid)), ["n", "a", "b", "c"]);
+  const first = removal(list, removeTodo(list, "a"));
+  assert.deepEqual(ids(restoreTodos([todo("n"), todo("b"), todo("c")], first)), ["n", "a", "b", "c"]);
+});
+
+test("restoreTodos: neighbours gone since, or nothing left, still restores", () => {
+  const list = [todo("a"), todo("b"), todo("c")];
+  const gone = removal(list, removeTodo(list, "b"));
+  assert.deepEqual(ids(restoreTodos([todo("n")], gone)), ["n", "b"]);
+  assert.deepEqual(ids(restoreTodos([], gone)), ["b"]);
+});
+
+test("restoreTodos: a todo already back is skipped, keeping identity", () => {
+  const list = [todo("a"), todo("b")];
+  const removed = removal(list, removeTodo(list, "b"));
+  assert.equal(restoreTodos(list, removed), list);
 });

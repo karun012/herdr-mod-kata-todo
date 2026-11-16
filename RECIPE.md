@@ -37,9 +37,11 @@ One column, drawn only from `theme()` colours, background `chrome`, text
 - **Error line** under a closed row, indented 42px (18 right, 6 bottom): 11px
   `ansi1` at opacity 0.8, one line, truncated.
 - **Empty**: `Nothing to do.` centred, 12px `dim`.
-- **Footer**, only when there are done items (padding 18 sides, 10 top and
-  bottom, gap 6, 11px `dim`): `N done · Hide · Clear`; while hidden,
-  `N done hidden · Show · Clear`.
+- **Footer**, when there are done items or an Undo is pending (padding 18
+  sides, 10 top and bottom, 11px `dim`, two groups at either end, gap 6 within
+  each): on the left, when there are done items, `N done · Hide · Clear`;
+  while hidden, `N done hidden · Show · Clear`. On the right, after `×` or
+  Clear, `N deleted · Undo` or `N cleared · Undo`, Undo in `accent`.
 
 ## How it behaves
 
@@ -65,7 +67,7 @@ It shows no agent status; it follows the focused terminal.
   `accent`) when kata is on the machine's PATH, a `.kata.toml` is in the
   repository or a folder above it, and the item is not sent and not done, and `×` (11px `dim`). Neither shows while sending.
 - **Ring** click toggles done.
-- **×** deletes the item at once, no confirmation.
+- **×** deletes the item at once, no confirmation; Undo brings it back.
 - **Title** click opens the row in place and focuses the title, which wraps
   when long. Clicking another title saves this one and opens that one. Enter
   in the title or Escape closes it: the title is a textarea, so a typed newline
@@ -88,6 +90,12 @@ It shows no agent status; it follows the focused terminal.
 - **Hide / Show** stops or resumes drawing done items. One flag for the whole
   mod copy, kept across repositories and restarts. **Clear** removes all done
   items from this list.
+- **Undo.** After `×` or Clear, the footer offers Undo for 30 s, or until the
+  next `×` or Clear replaces it; it shows only on the list it came from. Undo
+  puts the items back where they stood: each after the nearest item that was
+  above it and is still there, else before the nearest one that was below it,
+  else last. An item that is already back is skipped. Like `sending…` and
+  errors, it lives in memory only.
 - With no `kata` on the machine's PATH, or no `.kata.toml` at or above the
   repository, it is a plain todo list: no `→ kata`. The `.kata.toml` check runs
   when the list changes repository and every 30 s after, so `kata init` shows
@@ -102,7 +110,7 @@ It shows no agent status; it follows the focused terminal.
 |---|---|
 | `mod.json` | `{ "place": "none", "title": "Todo" }` |
 | `main.js` | The `View`: resolves the repository, reads and writes shared state, runs `git`, `sh` and `kata` through `exec`, draws the list. |
-| `list.js` | Pure functions on todos and the lists map (`listKey`, `newTodo`, `updateTodo`, `markSent`, `applyToList`, ...). No Herdr imports. |
+| `list.js` | Pure functions on todos and the lists map (`listKey`, `newTodo`, `updateTodo`, `markSent`, `applyToList`, `removal`, `restoreTodos`, ...). No Herdr imports. |
 | `repo.js` | Pure: `listFolder(focus, space, panes)`, `repoFolder(space, panes)`, `parseToplevel`, `repoName`. |
 | `kata.js` | Pure: `createArgs(todo)`, `idempotencyKey(todo)`, `parseCreate({code, stdout, stderr})` returning `{ref}` or `{error}`. |
 
@@ -206,6 +214,8 @@ to `keys.json`, for example under `global`:
 - A long title wraps when the row is opened, and Enter closes the row.
 - Ticking the ring moves the item below the open ones, struck through, and
   the footer reads `1 done · Hide · Clear`; Hide hides it, Clear removes it.
+- `×` on an item, then Undo, brings it back in its place; Clear, then Undo,
+  brings the done items back.
 - In a repository with a `.kata.toml` where `kata` is on the PATH, hovering
   shows `→ kata`; in one without, it doesn't; pressing it shows
   `sending…`, then the short id chip, and the issue exists in that
