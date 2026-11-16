@@ -1,10 +1,11 @@
 # Todo (kata-todo)
 
 A mod for the Herdr desktop app: a small todo list for the repository of the
-space you are looking at, shown in Herdr as **Todo**. Each repository on each
-machine has its own list. Add items, tick them off, add a note, and, where
+terminal you are in, shown in Herdr as **Todo**. Each repository on each
+machine has its own list. Add items, tick them off, add a note (a long title wraps while you edit it), and, where
 [kata](https://katatracker.com) is installed, send any open item to kata as an
-issue with one click; the row then shows the issue's short id.
+issue with one click; the row then shows the issue's short id and is ticked
+off.
 
 ![Todo](preview.png)
 
@@ -27,8 +28,11 @@ Requirements:
 ## How it works
 
 - **Which list.** The repository (`git rev-parse --show-toplevel`) of the
-  shown space's first terminal's folder, on that space's machine. Outside git,
-  the folder itself.
+  focused terminal's live folder, on that space's machine. Outside git, the
+  folder itself. While a non-terminal pane (a diff, a viewer) has focus, or the
+  terminal's folder is unknown, the current list stays. With nothing focused
+  yet (first load), the space's first terminal's folder is used. A new tab that
+  cd's to `~` shows the home list.
 - **Data.** Stored in Herdr shared state under the key `kata-todo.lists`
   (Herdr's `shared.json`), kept across restarts. Nothing is written in your
   repositories. The Hide/Show choice for done items is one `localStorage`
@@ -40,10 +44,11 @@ Requirements:
   kata create --idempotency-key todo-<id>-<hash> [--body <note>] --json -- <title>
   ```
 
-  The issue's short id is shown on the row. If kata finds similar issues the
+  The issue's short id is shown on the row and the item is marked done: once
+  it is a kata issue, kata tracks it. You can untick it. If kata finds similar issues the
   row shows `looks like <refs>` and nothing is created; other failures show
-  kata's error message. The mod does no tracking after that; tick the item
-  off yourself.
+  kata's error message and leave the item open. The mod does no tracking after
+  that.
 - **Idempotency.** The key includes a hash of the title and note. Pressing
   `→ kata` twice returns the same issue; editing the item after a failed send
   gives a new key, since kata refuses a reused key with changed fields.

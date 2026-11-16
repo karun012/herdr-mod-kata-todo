@@ -25,17 +25,22 @@ particular project, sandbox or machine.
 
 ## Data
 
-**Which list.** The focused space's repository: the git top-level of the
-space's first terminal's live folder, from `git rev-parse --show-toplevel` run
-on the space's machine. "First terminal" is the first terminal pane of the
-space's first tab (lowest `index`, matched to `panes()` by tab id), as Herdr's
-own mods name spaces; with none, or when its folder is unknown, `space.folder`,
-and an empty `space.folder` is the machine's home. A folder outside git uses the folder itself. The list
-key is `"<machine or local>:<path>"`; the header shows the path's basename.
+**Which list.** The focused terminal's repository: the git top-level of its
+live folder (`focused().cwd`), from `git rev-parse --show-toplevel` run on the
+space's machine. The list follows the focused terminal, not the shown space, so
+a new tab that cd's to `~` shows the home list. `listFolder(focused(), space,
+panes())` decides the folder: while a non-terminal pane (a diff, a viewer) has
+focus, or the terminal's folder is unknown, the current list stays. With
+nothing focused at all (first load) the old rule applies: the space's first
+terminal, i.e. the first terminal pane of its first tab (lowest `index`,
+matched to `panes()` by tab id), as Herdr's own mods name spaces; with none, or
+when its folder is unknown, `space.folder`, and an empty `space.folder` is the
+machine's home. A folder outside git uses the folder itself. The list key is
+`"<machine or local>:<path>"`; the header shows the path's basename.
 
-The repo is resolved off the render path: when the focused space id, its
-machine or that folder changes, an async `git rev-parse` runs and the previous
-list stays drawn until it answers.
+The repo is resolved off the render path: when that machine or folder changes
+(a 500 ms timer), an async `git rev-parse` runs and the previous list stays
+drawn until it answers.
 
 **Storage.** Herdr shared state, one key `kata-todo.lists`:
 
@@ -50,7 +55,8 @@ overwrite each other. Typing in the title or note updates the copy's own state
 and is written on blur, on closing the row, or after 500 ms without typing,
 not per keystroke (every `setShared` re-renders every mod).
 
-**A todo.** `id`: short random id. `title`: one line, required. `note`:
+**A todo.** `id`: short random id. `title`: one line, required (stored as one
+line; the editor wraps a long one). `note`:
 optional text. `done`: boolean. `created`: seconds. `kata`: `null` until
 sent, then `{ "ref": "<short id>" }`.
 
@@ -71,19 +77,28 @@ Theme colours only (`theme()`): chrome background, `foreground`, `muted`,
   Escape event, so Escape here and in an open row is an `on_key_down` on a
   wrapping element matching `"escape"`.
 - **Row.** 13px text, 8px vertical padding: a 14px ring checkbox, the title
-  (one line, truncated). Hover (`raised`) reveals, at the right, `→ kata`
+  (one line, truncated when closed). Hover (`raised`) reveals, at the right, `→ kata`
   (`accent`, only when kata is available and the todo is unsent and not done)
   and `×` (`dim`). Delete has no confirmation. A ticked checkbox fills with
   `done`.
 - **Note.** Clicking a title opens the row in place: an editable title and a
-  small note field below it. Edits save as typed. Escape, or opening another
-  row, closes it. A closed row with a note shows a faint `¶`.
-- **Sent.** A small `dim` chip with the issue's short id after the title. No
-  further tracking; the person ticks the todo off.
+  small note field below it. The title is a `TextareaState` (`rows: 1`,
+  `set_auto_grow(1, 6)`) drawn with `Textarea`, so a long title wraps; the open
+  row aligns items to the top (`items_start`) so the ring stays at the first
+  line. Enter still closes the row: a typed newline is caught on `change`, the
+  value is cleaned to one line (`cleanTitle`) and the row closes. Edits save as
+  typed. Escape, or opening another row, closes it. A closed row with a note shows a faint `¶`.
+- **Sent.** A small `dim` chip with the issue's short id after the title, and
+  the todo is marked done: `markSent(list, id, ref)` is
+  `updateTodo(list, id, { kata: { ref }, done: true })`. Once it is a kata
+  issue, kata tracks it; the todo is handed off. So it is ticked, sinks below
+  the open items struck through, and counts in the done footer, where Hide and
+  Clear apply to it like any done item. The person can still untick it. No
+  further tracking.
 - **Sending.** The action reads `sending…` until kata answers.
 - **Error.** One line under the row in `ansi1` at reduced opacity: kata's first
   error line, or `looks like <refs>` for kata's duplicate refusal. The todo
-  stays and `→ kata` returns.
+  stays open and `→ kata` returns.
 - **Done.** Below the open items, `dim` with a strikethrough. When any exist,
   a footer line (11px, `dim`) reads `N done · Hide · Clear`. **Hide** stops
   drawing done rows and the footer becomes `N done hidden · Show · Clear`;
@@ -127,8 +142,8 @@ kata create <title> [--body <note>] --idempotency-key <key> --json
 | File | Role |
 |---|---|
 | `mod.json` | `{ "place": "none", "title": "Todo" }` |
-| `list.js` | Pure functions on plain data: `listKey`, `newTodo`, `addTodo`, `updateTodo`, `removeTodo`, `clearDone`, `ordered`, `openCount`, `applyToList`. No Herdr imports. |
-| `repo.js` | Pure: `repoFolder(space, panes)`, `parseToplevel`, `repoName`. No Herdr imports. |
+| `list.js` | Pure functions on plain data: `listKey`, `newTodo`, `addTodo`, `updateTodo`, `removeTodo`, `markSent`, `clearDone`, `ordered`, `openCount`, `applyToList`. No Herdr imports. |
+| `repo.js` | Pure: `listFolder(focus, space, panes)`, `repoFolder(space, panes)`, `parseToplevel`, `repoName`. No Herdr imports. |
 | `kata.js` | Pure functions: `createArgs(todo)`, `idempotencyKey(todo)`, `parseCreate({code, stdout, stderr})` → `{ref}` or `{error}`. No Herdr imports. |
 | `main.js` | The `View`: resolves the repo, reads/writes shared state, runs `git` and `kata` through `exec`, draws the list. |
 
@@ -144,8 +159,9 @@ and `kata.js`; `main.js` only gathers facts, calls them, and performs effects.
   titles with quotes and leading dashes), JSON parsing, exit 5 and other
   failures. No Herdr, no kata.
 - `herdr-app check mods/kata-todo`.
-- One live pass in the app: add, edit with a note, send to kata, see the id,
-  tick off, clear done, delete; and in a folder without kata, no `→ kata`.
+- One live pass in the app: add, edit with a note and a long title, send to
+  kata, see the id and the ticked row, clear done, delete; a new tab cd'd to
+  `~` shows a separate list; and in a folder without kata, no `→ kata`.
 
 ## Repository
 

@@ -1,10 +1,10 @@
 # Todo
 
-A quiet todo list for the repository of the space you are looking at. Each
+A quiet todo list for the repository of the terminal you are in. Each
 repository on each machine has its own list. Type to add an item, tick it off,
 click it to edit its title and add a note, and, where `kata` is installed,
 send any open item to kata as an issue with one click; the row then shows the
-issue's short id.
+issue's short id and is ticked off.
 
 ![Todo](preview.png)
 
@@ -24,14 +24,15 @@ One column, drawn only from `theme()` colours, background `chrome`, text
   (newest first), then done items. Each row: padding 18 sides, 8 top and
   bottom, gap 10, 13px text:
   - a 14px ring, 1px `dim` border; when done, border and fill `done`;
-  - the title, one line, truncated; `foreground`, or `dim` with a
-    strikethrough when done;
+  - the title, one line, truncated (in the open row it wraps); `foreground`,
+    or `dim` with a strikethrough when done;
   - a `¶` (11px `dim`) when the item has a note;
   - once sent, a chip with the kata short id: 11px `dim`, 5px side padding,
-    radius 4, 1px `border`;
+    radius 4, 1px `border`; the item is then done;
   - while sending, `sending…` (11px `dim`).
-- **Open row** (after clicking a title): the title becomes an editable 13px
-  input, and below it, indented 42px (18 right, 8 bottom), a note textarea at
+- **Open row** (after clicking a title): items align to the top, so the ring
+  stays at the first line. The title becomes an editable 13px textarea, 1 row,
+  growing to 6, so a long title wraps; below it, indented 42px (18 right, 8 bottom), a note textarea at
   12px `muted` with placeholder `Note`, 2 rows, growing to 8.
 - **Error line** under a closed row, indented 42px (18 right, 6 bottom): 11px
   `ansi1` at opacity 0.8, one line, truncated.
@@ -42,13 +43,17 @@ One column, drawn only from `theme()` colours, background `chrome`, text
 
 ## How it behaves
 
-It shows no agent status; it follows whichever space is shown.
+It shows no agent status; it follows the focused terminal.
 
-- **Which list.** The shown space's first terminal (the first terminal pane
-  of the space's lowest-`index` tab), its live folder; else `space.folder`;
-  an empty folder means home. On the space's machine it runs
-  `git rev-parse --show-toplevel` there; outside git it uses the folder
-  itself. The list key is `<machine or "local">:<path>` (`~` for an empty
+- **Which list.** `listFolder(focused(), space, panes())`: the focused
+  terminal's live folder (`focused().cwd`). While a non-terminal pane (a diff,
+  a viewer) has focus, or the terminal's folder is unknown, the current list
+  stays. With nothing focused at all (first load), the shown space's first
+  terminal (the first terminal pane of the space's lowest-`index` tab), its
+  live folder; else `space.folder`; an empty folder means home. On the space's
+  machine it runs `git rev-parse --show-toplevel` there; outside git it uses
+  the folder itself. It is re-resolved when that machine and folder change
+  (checked every 500 ms), so a new tab that cd's to `~` shows the home list. The list key is `<machine or "local">:<path>` (`~` for an empty
   path). The previous list stays drawn until git answers. Moving to another
   repository closes an open row (saving it first).
 - **Add.** Enter in the add field puts the item at the top and clears the
@@ -61,18 +66,23 @@ It shows no agent status; it follows whichever space is shown.
   not done, and `×` (11px `dim`). Neither shows while sending.
 - **Ring** click toggles done.
 - **×** deletes the item at once, no confirmation.
-- **Title** click opens the row in place and focuses the title. Clicking
-  another title saves this one and opens that one. Enter in the title or
-  Escape closes it. Edits are written 500 ms after the last keystroke, on
+- **Title** click opens the row in place and focuses the title, which wraps
+  when long. Clicking another title saves this one and opens that one. Enter
+  in the title or Escape closes it: the title is a textarea, so a typed newline
+  is caught on `change`, the value is cleaned to one line and the row closes.
+  Titles are stored as one line. Edits are written 500 ms after the last keystroke, on
   blur, on closing the row and when the mod closes. Clearing the title keeps
   the old title; the note is trimmed.
 - **→ kata** runs `kata create` in the repository folder on the space's
   machine (60 s timeout). While it runs the row shows `sending…`. Success
-  stores the short id and shows the chip; the item stays until ticked off.
+  stores the short id, shows the chip and marks the item done (once it is a
+  kata issue, kata tracks it): it is ticked, sinks below the open items struck
+  through, and counts in `N done · Hide · Clear`, where Hide and Clear apply to
+  it like any done item. You can untick it.
   Failure shows one line under the row: `looks like <refs>` when kata finds
   look-alike issues (refs comma-separated), else kata's error message, else
   the first line of its output, else `kata exited with <code>`. The item
-  stays and `→ kata` returns; sending again clears the error. A reply that
+  stays open and `→ kata` returns; sending again clears the error. A reply that
   comes after you moved to another repository still updates the item it was
   sent for. `sending…` and errors live in memory only.
 - **Hide / Show** stops or resumes drawing done items. One flag for the whole
@@ -89,19 +99,19 @@ It shows no agent status; it follows whichever space is shown.
 |---|---|
 | `mod.json` | `{ "place": "none", "title": "Todo" }` |
 | `main.js` | The `View`: resolves the repository, reads and writes shared state, runs `git`, `sh` and `kata` through `exec`, draws the list. |
-| `list.js` | Pure functions on todos and the lists map (`listKey`, `newTodo`, `updateTodo`, `applyToList`, ...). No Herdr imports. |
-| `repo.js` | Pure: `repoFolder(space, panes)`, `parseToplevel`, `repoName`. |
+| `list.js` | Pure functions on todos and the lists map (`listKey`, `newTodo`, `updateTodo`, `markSent`, `applyToList`, ...). No Herdr imports. |
+| `repo.js` | Pure: `listFolder(focus, space, panes)`, `repoFolder(space, panes)`, `parseToplevel`, `repoName`. |
 | `kata.js` | Pure: `createArgs(todo)`, `idempotencyKey(todo)`, `parseCreate({code, stdout, stderr})` returning `{ref}` or `{error}`. |
 
-**Herdr calls.** From `"herdr"`: `spaces`, `panes`, `exec`, `shared`,
+**Herdr calls.** From `"herdr"`: `spaces`, `panes`, `focused`, `exec`, `shared`,
 `setShared`, `theme`, `checking`. From `gpui-base`: `v_flex`, `h_flex`,
-`InputState`/`Input`, `TextareaState`/`Textarea`. No commands, no `hc`, no
+`InputState`/`Input` (the add field), `TextareaState`/`Textarea` (title and note). No commands, no `hc`, no
 `fetch`, no files read.
 
 **Programs it runs**, all with `exec` on the shown space's machine (`on`):
 
-- `git rev-parse --show-toplevel` in the space's folder, when the shown
-  space, its machine or that folder changes (checked every 500 ms).
+- `git rev-parse --show-toplevel` in the focused terminal's folder, when that
+  machine or folder changes (checked every 500 ms).
 - `sh -c 'command -v kata'`, once per machine per mod copy.
 - `kata create --idempotency-key todo-<id>-<hash> [--body <note>] --json -- <title>`,
   in the repository folder, only when the person presses `→ kata`.
@@ -188,11 +198,14 @@ to `keys.json`, for example under `global`:
   with Enter shows it at the top and the count goes up.
 - Clicking a title opens the title and note fields; typing a note and
   pressing Escape closes the row and shows `¶`.
+- A long title wraps when the row is opened, and Enter closes the row.
 - Ticking the ring moves the item below the open ones, struck through, and
   the footer reads `1 done · Hide · Clear`; Hide hides it, Clear removes it.
 - Where `kata` is on the PATH, hovering shows `→ kata`; pressing it shows
   `sending…`, then the short id chip, and the issue exists in that
-  repository's kata project. Sending the same title again from a new item
+  repository's kata project. The sent item is ticked and sits below the open
+  ones. Sending the same title again from a new item
   shows `looks like <ref>`.
 - In a space whose machine has no `kata`, no `→ kata` appears.
 - Switching to a space in another repository shows that repository's list.
+- A new tab that cd's to `~` shows a separate (home) list.
