@@ -1,7 +1,7 @@
 // kata-todo: a quiet todo list for the repo you're in; any item can become a
 // kata issue. Decisions live in list.js / repo.js / kata.js; this file only
 // gathers facts from Herdr, calls them, and performs the effects.
-import { View, div } from "gpui-kit";
+import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, focused, exec, shared, setShared, theme, checking } from "herdr";
 import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields } from "./list.js";
@@ -184,8 +184,8 @@ export default class KataTodo extends View {
     const canSend = this.kata[repo.machine ?? "local"] === true && !todo.kata && !todo.done;
 
     const ring = div().id(`ring-${todo.id}`).size(14).flex_none().rounded_full().border_1()
-      .border_color(todo.done ? t.done : t.dim).cursor_pointer()
-      .when(todo.done, (el) => el.bg(t.done))
+      .border_color(t.dim).cursor_pointer().flex().items_center().justify_center()
+      .when(todo.done, (el) => el.child(svg("mods/kata-todo/check.svg").size(9).text_color(t.dim)))
       .on_click((_e, cx) => {
         cx.stop_propagation();
         this.write(repo.key, (list) => updateTodo(list, todo.id, { done: !todo.done }));

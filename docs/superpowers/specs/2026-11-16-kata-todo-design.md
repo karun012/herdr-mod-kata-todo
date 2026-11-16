@@ -66,7 +66,7 @@ on that machine. `→ kata` is shown only where it succeeds.
 ## What you see
 
 Theme colours only (`theme()`): chrome background, `foreground`, `muted`,
-`dim`, `accent`, `done`, `border`, `raised` for hover. Sizes are px at zoom 1.
+`dim`, `accent`, `border`, `raised` for hover. Sizes are px at zoom 1.
 
 - **Header.** `Todo` (15px, semibold) left; `<repo name> · N open` (11px,
   `dim`) right.
@@ -79,8 +79,8 @@ Theme colours only (`theme()`): chrome background, `foreground`, `muted`,
 - **Row.** 13px text, 8px vertical padding: a 14px ring checkbox, the title
   (one line, truncated when closed). Hover (`raised`) reveals, at the right, `→ kata`
   (`accent`, only when kata is available and the todo is unsent and not done)
-  and `×` (`dim`). Delete has no confirmation. A ticked checkbox fills with
-  `done`.
+  and `×` (`dim`). Delete has no confirmation. A ticked ring keeps its `dim`
+  border and shows a small `dim` check inside, no fill.
 - **Note.** Clicking a title opens the row in place: an editable title and a
   small note field below it. The title is a `TextareaState` (`rows: 1`,
   `set_auto_grow(1, 6)`) drawn with `Textarea`, so a long title wraps; the open

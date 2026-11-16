@@ -23,7 +23,7 @@ One column, drawn only from `theme()` colours, background `chrome`, text
 - **List**, scrolling, filling the rest. Open items first in stored order
   (newest first), then done items. Each row: padding 18 sides, 8 top and
   bottom, gap 10, 13px text:
-  - a 14px ring, 1px `dim` border; when done, border and fill `done`;
+  - a 14px ring, 1px `dim` border; when done, a 9px `dim` check inside (`check.svg`);
   - the title, one line, truncated (in the open row it wraps); `foreground`,
     or `dim` with a strikethrough when done;
   - a `¶` (11px `dim`) when the item has a note;
@@ -159,8 +159,8 @@ to `keys.json`, for example under `global`:
 
 - Copy only `mods/kata-todo` into `~/.config/herdr-app/mods/`. Never
   overwrite: on a clash, rename the folder and the `mod` name in the layout
-  block. The mod has no assets and imports its modules relatively
-  (`./list.js`, `./repo.js`, `./kata.js`), so no paths inside need changing.
+  block, and the one asset path in `main.js`, `svg("mods/kata-todo/check.svg")`.
+  Its modules are imported relatively (`./list.js`, `./repo.js`, `./kata.js`).
 - `herdr-app check` writes `gpui-kit.d.ts`, `jsconfig.json` (and possibly
   `herdr.d.ts`) into the mod folder for editor typing. Don't copy or commit
   them.
