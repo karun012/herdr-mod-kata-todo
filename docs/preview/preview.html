@@ -1,0 +1,138 @@
+<!doctype html>
+<!-- Source of preview.png. Render with `just preview` (headless Chrome, 1728x1084 at 2x). -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Todo preview</title>
+<style>
+  :root {
+    --page: #0e0f12;
+    --card: #15161a;
+    --chrome: #1b1c21;
+    --background: #141519;
+    --raised: #24262d;
+    --border: #2c2e36;
+    --foreground: #e6e7eb;
+    --muted: #b3b6bf;
+    --dim: #7c808c;
+    --accent: #9db4e8;
+    --green: #a6d189;
+    --teal: #81c8be;
+    --mauve: #ca9ee6;
+    --mono: "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --sans: -apple-system, "SF Pro Display", "Inter", "Helvetica Neue", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1728px; height: 1084px; background: var(--page); overflow: hidden; }
+  body { font-family: var(--sans); color: var(--foreground); display: grid; place-items: center; }
+
+  .card {
+    width: 1600px; height: 1000px; border-radius: 24px;
+    background: radial-gradient(1200px 500px at 50% -10%, #1e2230 0%, var(--card) 60%);
+    border: 1px solid #1f2127;
+    display: flex; flex-direction: column; align-items: center; padding-top: 72px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 19px; color: var(--dim); }
+  .brand .marks { display: flex; gap: 5px; }
+  .brand .marks i { width: 14px; height: 14px; border-radius: 4px; background: #34363e; }
+  .brand .marks i:last-child { background: var(--accent); }
+  .brand b { color: var(--foreground); font-weight: 600; }
+
+  h1 { margin-top: 34px; font-size: 82px; font-weight: 800; letter-spacing: -1.6px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .sub { margin-top: 20px; font-size: 23px; color: var(--muted); }
+  .sub b { color: var(--foreground); font-weight: 650; }
+
+  .window {
+    margin-top: 54px; width: 1240px; height: 520px; border-radius: 14px;
+    background: var(--background); border: 1px solid var(--border);
+    box-shadow: 0 40px 80px rgba(0,0,0,.45);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .titlebar {
+    height: 46px; flex: none; display: flex; align-items: center; padding: 0 18px;
+    background: var(--chrome); border-bottom: 1px solid var(--border);
+  }
+  .dots { display: flex; gap: 8px; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; background: #3a3c45; }
+  .tabs { margin-left: auto; display: flex; gap: 4px; font: 14px var(--mono); color: var(--dim); }
+  .tabs span { padding: 6px 12px; border-radius: 7px; }
+  .tabs .on { background: var(--raised); color: var(--foreground); }
+
+  .body { flex: 1; display: flex; min-height: 0; }
+
+  .term { flex: 1; padding: 26px 26px; font: 15px/1.75 var(--mono); color: var(--muted); }
+  .term .p { color: var(--teal); }
+  .term .on { color: var(--dim); }
+  .term .br { color: var(--mauve); }
+  .term .gt { color: var(--green); }
+  .term .cmd { color: var(--foreground); }
+  .term .gap { height: 14px; }
+  .term .cursor { display: inline-block; width: 9px; height: 18px; background: var(--muted); vertical-align: -3px; }
+  .term .note { margin-top: 26px; color: #565a65; }
+
+  /* The Todo panel, per RECIPE.md sizes, scaled 1.15 */
+  .panel {
+    width: 440px; flex: none; background: var(--chrome); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; font-family: var(--mono); zoom: 1.15;
+  }
+  .hd { display: flex; align-items: flex-end; padding: 16px 18px 10px; }
+  .hd .t { font-size: 15px; font-weight: 600; }
+  .hd .r { margin-left: auto; font-size: 11px; color: var(--dim); }
+  .add {
+    height: 36px; margin: 0 14px 10px; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--background);
+    display: flex; align-items: center; font-size: 13px; color: var(--dim);
+  }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 18px; font-size: 13px; }
+  .row.hover { background: var(--raised); }
+  .ring { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 1px solid var(--dim); display: grid; place-items: center; }
+  .ring svg { width: 9px; height: 9px; }
+  .title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .done .title { color: var(--dim); text-decoration: line-through; }
+  .small { font-size: 11px; color: var(--dim); flex: none; }
+  .kata { font-size: 11px; color: var(--accent); flex: none; }
+  .chip { font-size: 11px; color: var(--dim); padding: 1px 5px; border-radius: 4px; border: 1px solid var(--border); flex: none; }
+  .foot { margin-top: auto; padding: 10px 18px; font-size: 11px; color: var(--dim); display: flex; gap: 6px; }
+
+  .credit { margin-top: auto; margin-bottom: 40px; font: 16px var(--mono); color: var(--dim); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand"><span class="marks"><i></i><i></i><i></i></span><b>Todo</b><span>· a Herdr mod</span></div>
+  <h1><em>Todo</em>, a list for every repo.</h1>
+  <p class="sub">Jot it down beside the terminal you're in. <b>Tick it off, or send it to kata in one click.</b></p>
+
+  <div class="window">
+    <div class="titlebar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <div class="tabs"><span>Files</span><span>Changes</span><span class="on">Todo</span></div>
+    </div>
+    <div class="body">
+      <div class="term">
+        <div><span class="p">~/api-service</span> <span class="on">on</span> <span class="br">main</span></div>
+        <div><span class="gt">❯</span> <span class="cmd">cd ../acme-app</span></div>
+        <div class="gap"></div>
+        <div><span class="p">~/acme-app</span> <span class="on">on</span> <span class="br">main</span></div>
+        <div><span class="gt">❯</span> <span class="cursor"></span></div>
+        <div class="note">the list follows the terminal's repository →</div>
+      </div>
+
+      <div class="panel">
+        <div class="hd"><span class="t">Todo</span><span class="r">acme-app · 3 open</span></div>
+        <div class="add">Add a todo…</div>
+        <div class="row hover"><span class="ring"></span><span class="title">Upgrade the date library</span><span class="kata">→ kata</span><span class="small">×</span></div>
+        <div class="row"><span class="ring"></span><span class="title">Write onboarding docs for new contributors</span><span class="small">¶</span></div>
+        <div class="row"><span class="ring"></span><span class="title">Bump Node to v22 in CI</span></div>
+        <div class="row done"><span class="ring"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#7c808c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="title">Fix flaky checkout test on CI</span><span class="chip">k7qp</span></div>
+        <div class="row done"><span class="ring"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="#7c808c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="title">Add rate limiting to the public API</span><span class="small">¶</span></div>
+        <div class="foot"><span>2 done</span><span>·</span><span>Hide</span><span>·</span><span>Clear</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="credit">karun012/herdr-mod-kata-todo · MIT</div>
+</div>
+</body>
+</html>

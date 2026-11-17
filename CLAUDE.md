@@ -14,6 +14,7 @@ node --test tests/kata.test.mjs             # one test file
 node --test --test-name-pattern "idempotency" tests/*.test.mjs   # tests matching a name
 just check                                  # herdr-app check mods/kata-todo (loads mod, renders empty state)
 just install                                # test + check, then rsync into $HERDR_APP_HOME (default ~/.config/herdr-app)/mods/kata-todo
+just preview                                # (host, macOS) render preview.png from docs/preview/preview.html via headless Chrome
 just sbx                                    # (host) Claude Code in Docker sandbox `claude-herdr-mod-kata-todo`; args pass to claude
 ```
 
