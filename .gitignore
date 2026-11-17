@@ -8,3 +8,4 @@ mods/*/jsconfig.json
 /~/
 # Finder
 .DS_Store
+.kata.local.toml
