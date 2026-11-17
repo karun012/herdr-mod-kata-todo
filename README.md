@@ -28,6 +28,9 @@ Optional, for sending items to kata:
   open items get a `→ kata` button; without them, it's a plain todo list. kata
   picks the project from the repository's `.kata.toml`, so each repository's
   todos go to that repository's kata project.
+- If kata for a repository runs inside a container or sandbox rather than on
+  the machine Herdr runs on, add that container as a Herdr machine and open the
+  repository in a space there: the mod runs `kata` on the space's machine.
 
 ## How it works
 
