@@ -98,8 +98,10 @@ It shows no agent status; it follows the focused terminal.
   errors, it lives in memory only.
 - With no `kata` on the machine's PATH, or no `.kata.toml` at or above the
   repository, it is a plain todo list: no `→ kata`. The `.kata.toml` check runs
-  when the list changes repository and every 30 s after, so `kata init` shows
-  `→ kata` without switching folders.
+  when the list changes repository and every 30 s after, and the PATH check
+  for the machine every 30 s too, so `kata init` or installing kata shows
+  `→ kata` without switching folders. A machine that can't be asked keeps
+  what was last known until the next check.
 
 ## Built from
 
@@ -110,7 +112,7 @@ It shows no agent status; it follows the focused terminal.
 |---|---|
 | `mod.json` | `{ "place": "none", "title": "Todo" }` |
 | `main.js` | The `View`: resolves the repository, reads and writes shared state, runs `git`, `sh` and `kata` through `exec`, draws the list. |
-| `list.js` | Pure functions on todos and the lists map (`listKey`, `newTodo`, `updateTodo`, `markSent`, `applyToList`, `removal`, `restoreTodos`, ...). No Herdr imports. |
+| `list.js` | Pure functions on todos and the lists map (`listKey`, `makeId`, `newTodo`, `updateTodo`, `markSent`, `applyToList`, `removal`, `restoreTodos`, ...). No Herdr imports. |
 | `repo.js` | Pure: `listFolder(focus, space, panes)`, `repoFolder(space, panes)`, `parseToplevel`, `repoName`. |
 | `kata.js` | Pure: `createArgs(todo)`, `idempotencyKey(todo)`, `parseCreate({code, stdout, stderr})` returning `{ref}` or `{error}`. |
 
@@ -123,12 +125,14 @@ It shows no agent status; it follows the focused terminal.
 
 - `git rev-parse --show-toplevel` in the focused terminal's folder, when that
   machine or folder changes (checked every 500 ms).
-- `sh -c 'command -v kata'`, once per machine per mod copy.
+- `sh -c 'command -v kata'`, the first time a machine is shown and every
+  30 s after while it is, one at a time per machine.
 - `readTextFile` of `<dir>/.kata.toml` for the repository and each folder
-  above it (on the space's machine), until one exists.
+  above it (on the space's machine), until one exists; one check per list at
+  a time, so switching repositories mid-check still checks the new one.
 - `kata create --idempotency-key todo-<id>-<hash> [--body <note>] --json -- <title>`,
   in the repository folder, only when the person presses `→ kata`.
-  `<id>` is the item's 6-character random id; `<hash>` is a 32-bit FNV-1a
+  `<id>` is the item's 6-character random base-36 id, unique in its list; `<hash>` is a 32-bit FNV-1a
   hash, base 36, of `title + "\0" + note`. `--body` only when the note is
   not empty. The short id is `.issue.short_id` of the JSON on stdout.
 

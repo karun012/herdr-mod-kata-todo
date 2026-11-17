@@ -67,3 +67,8 @@ test("kataConfigPaths: the folder, then every folder above it, as kata looks", (
   assert.deepEqual(kataConfigPaths("/"), ["/.kata.toml"]);
   assert.deepEqual(kataConfigPaths(""), []);
 });
+
+test("kataConfigPaths: a relative path stops at its first folder, not one character at a time", () => {
+  assert.deepEqual(kataConfigPaths("r/app"), ["r/app/.kata.toml", "r/.kata.toml"]);
+  assert.deepEqual(kataConfigPaths("foo"), ["foo/.kata.toml"]);
+});

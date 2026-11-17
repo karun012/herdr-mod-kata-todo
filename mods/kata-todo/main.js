@@ -4,15 +4,14 @@
 import { View, div, svg } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input, TextareaState, Textarea } from "gpui-base";
 import { spaces, panes, focused, exec, readTextFile, shared, setShared, theme, checking } from "herdr";
-import { LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields, removal, restoreTodos } from "./list.js";
+import { LISTS_KEY, listKey, makeId, newTodo, addTodo, updateTodo, removeTodo, clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields, removal, restoreTodos } from "./list.js";
 import { repoFolder, listFolder, parseToplevel, repoName, kataConfigPaths } from "./repo.js";
 import { createArgs, parseCreate } from "./kata.js";
 
 const HIDE_DONE = "kata-todo.hide-done";
 const SAVE_AFTER_MS = 500;
-const BOUND_RECHECK_MS = 30000;
+const RECHECK_MS = 30000;
 const UNDO_FOR_MS = 30000;
-const makeId = () => Math.random().toString(36).slice(2, 8);
 
 function readHideDone() {
   try { return localStorage.getItem(HIDE_DONE) === "1"; } catch { return false; }
@@ -26,9 +25,10 @@ export default class KataTodo extends View {
     this.repo = null;          // { key, path, name, machine }
     this.context = null;       // the machine + folder the repo was resolved from
     this.kata = {};            // machine ("local" for this one) -> kata on its PATH
+    this.checkingKata = new Set();   // machines
     this.bound = {};           // list key -> a .kata.toml at or above the repo
-    this.boundCheckedAt = 0;
-    this.checkingBound = false;
+    this.checkingBound = new Set();  // list keys
+    this.checkedAt = 0;
     this.sending = new Set();  // "key|id"
     this.errors = new Map();   // "key|id" -> one line
     this.hovered = null;
@@ -76,8 +76,13 @@ export default class KataTodo extends View {
     }
     const context = `${machine ?? ""}\n${folder}`;
     if (context === this.context) {
-      // Re-check now and then so `kata init` shows → kata without a folder change.
-      if (Date.now() - this.boundCheckedAt > BOUND_RECHECK_MS) this.checkBound(cx);
+      // Re-check now and then so `kata init`, or installing kata, shows → kata
+      // without a folder change, and a failed check is retried.
+      if (Date.now() - this.checkedAt > RECHECK_MS) {
+        this.checkedAt = Date.now();
+        this.checkBound(cx);
+        this.checkKata(cx);
+      }
       return;
     }
     this.context = context;
@@ -92,26 +97,38 @@ export default class KataTodo extends View {
       if (key !== this.repo?.key) this.closeRow();
       this.repo = { key, path, name: repoName(path), machine };
       cx.notify();
+      this.checkedAt = Date.now();
       this.checkBound(cx);
-      const m = machine ?? "local";
-      if (m in this.kata) return;
-      this.kata[m] = false;
-      try { this.kata[m] = (await exec("sh", ["-c", "command -v kata"], { on: machine })).code === 0; } catch {}
-      cx.notify();
+      if (!((machine ?? "local") in this.kata)) this.checkKata(cx);
     });
   }
 
+  // Is kata on the shown machine's PATH? If the machine can't be asked, keep
+  // what was known; the next re-check tries again.
+  checkKata(cx) {
+    const machine = this.repo?.machine;
+    const m = machine ?? "local";
+    if (!this.repo || this.checkingKata.has(m)) return;
+    this.checkingKata.add(m);
+    cx.spawn(async (cx) => {
+      let found = this.kata[m] ?? false;
+      try { found = (await exec("sh", ["-c", "command -v kata"], { on: machine })).code === 0; } catch {}
+      this.checkingKata.delete(m);
+      if (this.kata[m] !== found) { this.kata[m] = found; cx.notify(); }
+    });
+  }
+
+  // One check per list at a time, so switching repos mid-check still checks the new one.
   checkBound(cx) {
     const repo = this.repo;
-    if (!repo || this.checkingBound) return;
-    this.checkingBound = true;
-    this.boundCheckedAt = Date.now();
+    if (!repo || this.checkingBound.has(repo.key)) return;
+    this.checkingBound.add(repo.key);
     cx.spawn(async (cx) => {
       let bound = false;
       for (const path of kataConfigPaths(repo.path)) {
         try { if ((await readTextFile(path, { on: repo.machine })) !== null) { bound = true; break; } } catch {}
       }
-      this.checkingBound = false;
+      this.checkingBound.delete(repo.key);
       if (this.bound[repo.key] !== bound) { this.bound[repo.key] = bound; cx.notify(); }
     });
   }
@@ -152,9 +169,10 @@ export default class KataTodo extends View {
 
   addFromInput() {
     if (!this.repo) return;
-    const todo = newTodo(this.add.value(), { id: makeId(), now: Math.floor(Date.now() / 1000) });
-    if (!todo) return;
-    this.write(this.repo.key, (list) => addTodo(list, todo));
+    const title = this.add.value();
+    const now = Math.floor(Date.now() / 1000);
+    if (!cleanTitle(title)) return;
+    this.write(this.repo.key, (list) => addTodo(list, newTodo(title, { id: makeId(list), now })));
     this.add.set_value("");
   }
 

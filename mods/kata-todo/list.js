@@ -17,6 +17,16 @@ export function newTodo(title, { id, now }) {
   return { id, title: text, note: "", done: false, created: now, kata: null };
 }
 
+// A 6-character base-36 id not already used in the list.
+export function makeId(list, random = Math.random) {
+  const taken = new Set(list.map((todo) => todo.id));
+  for (;;) {
+    let id = "";
+    while (id.length < 6) id += Math.floor(random() * 36).toString(36);
+    if (!taken.has(id)) return id;
+  }
+}
+
 export function changedFields(before, after) {
   return Object.fromEntries(Object.entries(after).filter(([key, value]) => value !== before[key]));
 }

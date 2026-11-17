@@ -26,8 +26,9 @@ export function kataConfigPaths(path) {
   let dir = path.replace(/\/+$/, "");
   for (;;) {
     paths.push(`${dir}/.kata.toml`);
-    if (!dir) return paths;
-    dir = dir.slice(0, dir.lastIndexOf("/"));
+    const up = dir.lastIndexOf("/");
+    if (up < 0) return paths;
+    dir = dir.slice(0, up);
   }
 }
 

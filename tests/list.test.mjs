@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  LISTS_KEY, listKey, newTodo, addTodo, updateTodo, removeTodo,
+  LISTS_KEY, listKey, makeId, newTodo, addTodo, updateTodo, removeTodo,
   clearDone, markSent, ordered, openCount, applyToList, listOf, cleanTitle, changedFields,
   removal, restoreTodos,
 } from "../mods/kata-todo/list.js";
@@ -141,4 +141,12 @@ test("restoreTodos: a todo already back is skipped, keeping identity", () => {
   const list = [todo("a"), todo("b")];
   const removed = removal(list, removeTodo(list, "b"));
   assert.equal(restoreTodos(list, removed), list);
+});
+
+test("makeId: always 6 base-36 characters, never one the list already has", () => {
+  // The first draw, "000000", is taken, so it draws again.
+  const values = [0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
+  const random = () => values.shift();
+  assert.equal(makeId([{ id: "000000" }], random), "iiiiii");
+  for (let i = 0; i < 200; i++) assert.match(makeId([]), /^[0-9a-z]{6}$/);
 });
